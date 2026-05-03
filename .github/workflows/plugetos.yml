@@ -10,31 +10,35 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
 
-      - name: Install QEMU
+      - name: Install QEMU & Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y qemu-system-x86 qemu-utils wget
+          sudo apt-get install -y qemu-system-x86 qemu-utils wget p7zip-full
 
       - name: Download Arch ISO
         run: |
-          # En güncel ISO'yu çekiyoruz
           wget https://mirror.rackspace.com/archlinux/iso/latest/archlinux-x86_64.iso -O arch.iso
+
+      - name: Extract Kernel for Direct Boot
+        run: |
+          # ISO içindeki kernel ve initramfs dosyalarını dışarı çıkartıyoruz
+          7z x arch.iso arch/boot/x86_64/vmlinuz-linux -o./
+          7z x arch.iso arch/boot/x86_64/initramfs-linux.img -o./
 
       - name: Create Virtual Disk
         run: qemu-img create -f qcow2 pluget_disk.qcow2 10G
 
-      - name: Boot Arch via QEMU
+      - name: Boot Arch via QEMU (Direct Mode)
         run: |
-          # 'timeout' ekleyerek sonsuz döngüden kaçınıyoruz
-          # 'no-reboot' ile hata aldığında kapanmasını sağlıyoruz
-          timeout 10m qemu-system-x86_64 \
-            -m 2G \
+          # 'console=ttyS0' ile tüm çıktıyı GitHub loglarına yönlendiriyoruz
+          # 'archisobasedir' ve 'archisolabel' ile ISO içeriğini tanıtıyoruz
+          timeout 15m qemu-system-x86_64 \
+            -m 4G \
             -smp 2 \
-            -display none \
-            -vga none \
+            -kernel arch/boot/x86_64/vmlinuz-linux \
+            -initrd arch/boot/x86_64/initramfs-linux.img \
+            -append "console=ttyS0 archisobasedir=arch archisolabel=ARCH_$(date +%Y%m)" \
             -drive file=pluget_disk.qcow2,format=qcow2 \
-            -cdrom arch.iso \
-            -boot d \
-            -net nic -net user \
+            -nographic \
             -serial stdio \
             -no-reboot
