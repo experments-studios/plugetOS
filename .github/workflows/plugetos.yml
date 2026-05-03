@@ -17,6 +17,7 @@ jobs:
 
       - name: Download Arch ISO
         run: |
+          # En güncel ISO'yu çekiyoruz
           wget https://mirror.rackspace.com/archlinux/iso/latest/archlinux-x86_64.iso -O arch.iso
 
       - name: Create Virtual Disk
@@ -24,14 +25,16 @@ jobs:
 
       - name: Boot Arch via QEMU
         run: |
-          # Bu komut Arch'ı başlatır ve terminal üzerinden erişim sağlar
-          qemu-system-x86_64 \
+          # 'timeout' ekleyerek sonsuz döngüden kaçınıyoruz
+          # 'no-reboot' ile hata aldığında kapanmasını sağlıyoruz
+          timeout 10m qemu-system-x86_64 \
             -m 2G \
             -smp 2 \
+            -display none \
+            -vga none \
             -drive file=pluget_disk.qcow2,format=qcow2 \
             -cdrom arch.iso \
             -boot d \
-            -nographic \
             -net nic -net user \
-            -append "console=ttyS0" \
-            -serial mon:stdio
+            -serial stdio \
+            -no-reboot
