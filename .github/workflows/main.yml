@@ -1,0 +1,30 @@
+name: PlugetOS Cloud Build
+
+on: 
+  workflow_dispatch: # Manuel olarak butona basıp başlatman için
+
+jobs:
+  arch-build:
+    runs-on: ubuntu-latest # GitHub'ın ana makinesi Ubuntu'dur
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Arch Linux
+        uses: arch-linux/arch-action@v2
+        with:
+          # Kurulmasını istediğin paketleri buraya ekle
+          packages: |
+            base
+            base-devel
+            networkmanager
+            gnome-shell
+            git
+
+      - name: Run Build Script
+        run: |
+          echo "PlugetOS Ortamı Hazırlanıyor..."
+          # Buraya Letfine veya Zluget ile yazdığın scriptleri ekleyebilirsin
+          systemctl --version
+          nmcli --version
+          echo "NetworkManager başarıyla kuruldu ve kontrol edildi."
